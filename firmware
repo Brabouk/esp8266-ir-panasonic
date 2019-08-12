@@ -1,0 +1,118 @@
+/*
+ Basic ESP8266 MQTT example
+
+ This sketch demonstrates the capabilities of the pubsub library in combination
+ with the ESP8266 board/library.
+
+ It connects to an MQTT server then:
+  - publishes "hello world" to the topic "outTopic" every two seconds
+  - subscribes to the topic "inTopic", printing out any messages
+    it receives. NB - it assumes the received payloads are strings not binary
+  - If the first character of the topic "inTopic" is an 1, switch ON the ESP Led,
+    else switch it off
+
+ It will reconnect to the server if the connection is lost using a blocking
+ reconnect function. See the 'mqtt_reconnect_nonblocking' example for how to
+ achieve the same result without blocking the main loop.
+
+ To install the ESP8266 board, (using Arduino 1.6.4+):
+  - Add the following 3rd party board manager under "File -> Preferences -> Additional Boards Manager URLs":
+       http://arduino.esp8266.com/stable/package_esp8266com_index.json
+  - Open the "Tools -> Board -> Board Manager" and click install for the ESP8266"
+  - Select your ESP8266 in "Tools -> Board"
+
+*/
+#include <Arduino.h>
+#include <IRremoteESP8266.h>
+#include <IRsend.h>
+#include <ESP8266WiFi.h>
+#include <PubSubClient.h>
+
+//int led = 4; 
+int led = 5; 
+int s;
+
+const uint16_t kIrLed = 4;  // ESP8266 GPIO pin to use. Recommended: 4 (D2).
+IRsend irsend(kIrLed);  // Set the GPIO to be used to sending the message.
+
+uint16_t rawData[99] = {3450,1750, 450,400, 450,1300, 450,400, 450,400, 450,450, 450,400, 450,400, 450,450, 400,450, 450,400, 450,400, 450,450, 400,450, 450,1300, 400,450, 450,400, 450,450, 400,450, 450,400, 450,400, 450,450, 400,450, 450,400, 450,1300, 450,400, 450,400, 450,450, 450,400, 450,400, 450,450, 400,450, 450,400, 450,1300, 400,450, 450,1300, 400,450, 450,400, 450,400, 450,450, 450,400, 450,1300, 450,400, 450,1250, 450,450, 450,400, 450,400, 450,450, 450,1250, 450};
+
+   
+
+// Update these with values suitable for your network.
+
+const char* ssid = "O2-Internet-128E";
+const char* password = "36909797";
+const char* mqttServer = "10.0.0.4";
+const int mqttPort = 1883;
+const char* mqttUser = "Brabouk";
+const char* mqttPassword = "examinationinflying";
+
+WiFiClient espClient;
+PubSubClient client(espClient);
+ 
+void setup() {
+  delay(1000);
+  pinMode(led,OUTPUT);
+  Serial.begin(115200);
+    irsend.begin();
+ 
+  WiFi.begin(ssid, password);
+ 
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.println("Connecting to WiFi..");
+  }
+  Serial.print("Connected to WiFi :");
+  Serial.println(WiFi.SSID());
+ 
+  client.setServer(mqttServer, mqttPort);
+  client.setCallback(MQTTcallback);
+ 
+  while (!client.connected()) {
+    Serial.println("Connecting to MQTT...");
+ 
+    if (client.connect("ESP8266", mqttUser, mqttPassword )) {
+ 
+      Serial.println("connected");  
+ 
+    } else {
+ 
+      Serial.print("failed with state ");
+      Serial.println(client.state());  //If you get state 5: mismatch in configuration
+      delay(2000);
+ 
+    }
+  }
+ 
+  client.publish("esp/test", "Hello from ESP8266");
+  client.subscribe("esp/test");
+ 
+}
+ 
+void MQTTcallback(char* topic, byte* payload, unsigned int length) {
+ 
+  Serial.print("Message arrived in topic: ");
+  Serial.println(topic);
+ 
+  Serial.print("Message:");
+ 
+  String message;
+  for (int i = 0; i < length; i++) {
+    message = message + (char)payload[i];  //Conver *byte to String
+  }
+   Serial.print(message);
+  if(message == "on")
+  for (s = 0; s < 30; s++)
+  {irsend.sendRaw(rawData,99,37);}
+    delay(40);
+    //{digitalWrite(led,LOW);}   //LED on  
+  if(message == "off") {digitalWrite(led,LOW);} //LED off
+ 
+  Serial.println();
+  Serial.println("-----------------------");  
+}
+ 
+void loop() {
+client.loop();
+}
