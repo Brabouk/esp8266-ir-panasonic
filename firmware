@@ -31,11 +31,15 @@
 //int led = 4; 
 int led = 5; 
 int s;
+int a;
+int b;
 
 const uint16_t kIrLed = 4;  // ESP8266 GPIO pin to use. Recommended: 4 (D2).
 IRsend irsend(kIrLed);  // Set the GPIO to be used to sending the message.
-
+// TVAV button
 uint16_t rawData[99] = {3450,1750, 450,400, 450,1300, 450,400, 450,400, 450,450, 450,400, 450,400, 450,450, 400,450, 450,400, 450,400, 450,450, 400,450, 450,1300, 400,450, 450,400, 450,450, 400,450, 450,400, 450,400, 450,450, 400,450, 450,400, 450,1300, 450,400, 450,400, 450,450, 450,400, 450,400, 450,450, 400,450, 450,400, 450,1300, 400,450, 450,1300, 400,450, 450,400, 450,400, 450,450, 450,400, 450,1300, 450,400, 450,1250, 450,450, 450,400, 450,400, 450,450, 450,1250, 450};
+// power button zapina i vypina
+uint16_t rawData3[99] = {3450,1750, 450,400, 450,1300, 450,400, 450,400, 450,450, 400,450, 450,400, 450,400, 450,450, 450,400, 450,400, 450,450, 450,400, 450,1300, 400,450, 450,400, 450,400, 450,450, 400,450, 450,400, 450,450, 450,400, 450,400, 450,1300, 400,450, 450,400, 450,450, 400,450, 450,400, 450,400, 450,450, 450,400, 450,1300, 400,450, 450,1250, 450,1300, 450,1300, 450,1250, 450,400, 450,450, 450,1250, 450,450, 400,1300, 450,1300, 450,1250, 450,1300, 450,400, 450,1300, 450};  // UNKNOWN F61E2A57
 
    
 
@@ -103,12 +107,19 @@ void MQTTcallback(char* topic, byte* payload, unsigned int length) {
   }
    Serial.print(message);
   if(message == "on")
-  for (s = 0; s < 30; s++)
-  {irsend.sendRaw(rawData,99,37);}
+  for (s = 0; s < 25; s++)
+  {irsend.sendRaw(rawData3,99,37);}
     delay(40);
+    if(message == "av")
+    for (b = 0; b < 15; b++)
+{irsend.sendRaw(rawData,99,37);}
+delay(50);
     //{digitalWrite(led,LOW);}   //LED on  
-  if(message == "off") {digitalWrite(led,LOW);} //LED off
- 
+  if(message == "off") //{digitalWrite(led,LOW);} //LED of¨
+  for (a = 0; a < 25; a++)
+ {irsend.sendRaw(rawData3,99,37);}
+    delay(40);
+    
   Serial.println();
   Serial.println("-----------------------");  
 }
